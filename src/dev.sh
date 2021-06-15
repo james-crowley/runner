@@ -59,7 +59,7 @@ fi
 
 # Make sure current platform support publish the dotnet runtime
 # Windows can publish win-x86/x64
-# Linux can publish linux-x64/arm/arm64
+# Linux can publish linux-x64/arm/arm64/s390x
 # OSX can publish osx-x64
 if [[ "$CURRENT_PLATFORM" == 'windows' ]]; then
     if [[ ("$RUNTIME_ID" != 'win-x86') && ("$RUNTIME_ID" != 'win-x64') ]]; then
@@ -67,7 +67,7 @@ if [[ "$CURRENT_PLATFORM" == 'windows' ]]; then
         exit 1
     fi
 elif [[ "$CURRENT_PLATFORM" == 'linux' ]]; then
-    if [[ ("$RUNTIME_ID" != 'linux-x64') && ("$RUNTIME_ID" != 'linux-x86') && ("$RUNTIME_ID" != 'linux-arm64') && ("$RUNTIME_ID" != 'linux-arm') && ("$RUNTIME_ID" != 'linux-ppc64le') && ("$RUNTIME_ID" != 'linux-s390x') ]]; then
+    if [[ ("$RUNTIME_ID" != 'linux-x64') && ("$RUNTIME_ID" != 'linux-x86') && ("$RUNTIME_ID" != 'linux-arm64') && ("$RUNTIME_ID" != 'linux-arm') && ("$RUNTIME_ID" != 'linux-s390x') ]]; then
        echo "Failed: Can't build $RUNTIME_ID package $CURRENT_PLATFORM" >&2
        exit 1
     fi
@@ -196,8 +196,11 @@ if [[ (! -d "${DOTNETSDK_INSTALLDIR}") || (! -e "${DOTNETSDK_INSTALLDIR}/.${DOTN
         sdkinstallwindow_path=${DOTNETSDK_INSTALLDIR:1}
         sdkinstallwindow_path=${sdkinstallwindow_path:0:1}:${sdkinstallwindow_path:1}
         powershell -NoLogo -Sta -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -Command "& \"./Misc/dotnet-install.ps1\" -Version ${DOTNETSDK_VERSION} -InstallDir \"${sdkinstallwindow_path}\" -NoPath; exit \$LastExitCode;" || checkRC dotnet-install.ps1
-    elif [[ ("$RUNTIME_ID" == 'linux-ppc64le') || ("$RUNTIME_ID" == 'linux-s390x') ]]; then
-        echo "Please build and install dotnet manually for s390x or ppc64le"
+    elif [[ ("$RUNTIME_ID" == 'linux-s390x') ]]; then
+        rm -rf "${DOTNETSDK_INSTALLDIR}"
+        mkdir -p "${DOTNETSDK_INSTALLDIR}"
+        tar -xvzf "${ALT_ARCH_TAR}" -C "${DOTNETSDK_INSTALLDIR}"
+        touch "${DOTNETSDK_INSTALLDIR}/.${DOTNETSDK_VERSION}"
     else
         bash ./Misc/dotnet-install.sh --version ${DOTNETSDK_VERSION} --install-dir "${DOTNETSDK_INSTALLDIR}" --no-path || checkRC dotnet-install.sh
     fi
@@ -205,10 +208,8 @@ if [[ (! -d "${DOTNETSDK_INSTALLDIR}") || (! -e "${DOTNETSDK_INSTALLDIR}/.${DOTN
     echo "${DOTNETSDK_VERSION}" > "${DOTNETSDK_INSTALLDIR}/.${DOTNETSDK_VERSION}"
 fi
 
-if [[ ("$RUNTIME_ID" != 'linux-ppc64le') && ("$RUNTIME_ID" != 'linux-s390x') ]]; then
-  echo "Prepend ${DOTNETSDK_INSTALLDIR} to %PATH%"
-  export PATH=${DOTNETSDK_INSTALLDIR}:$PATH
-fi
+echo "Prepend ${DOTNETSDK_INSTALLDIR} to %PATH%"
+export PATH=${DOTNETSDK_INSTALLDIR}:$PATH
 
 heading "Dotnet SDK Version"
 dotnet --version
