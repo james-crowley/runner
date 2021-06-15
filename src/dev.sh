@@ -196,6 +196,8 @@ if [[ (! -d "${DOTNETSDK_INSTALLDIR}") || (! -e "${DOTNETSDK_INSTALLDIR}/.${DOTN
         sdkinstallwindow_path=${DOTNETSDK_INSTALLDIR:1}
         sdkinstallwindow_path=${sdkinstallwindow_path:0:1}:${sdkinstallwindow_path:1}
         powershell -NoLogo -Sta -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -Command "& \"./Misc/dotnet-install.ps1\" -Version ${DOTNETSDK_VERSION} -InstallDir \"${sdkinstallwindow_path}\" -NoPath; exit \$LastExitCode;" || checkRC dotnet-install.ps1
+    elif [[ ("$RUNTIME_ID" == 'linux-ppc64le') || ("$RUNTIME_ID" == 'linux-s390x') ]]; then
+        echo "Please build and install dotnet manually for s390x or ppc64le"
     else
         bash ./Misc/dotnet-install.sh --version ${DOTNETSDK_VERSION} --install-dir "${DOTNETSDK_INSTALLDIR}" --no-path || checkRC dotnet-install.sh
     fi
@@ -203,8 +205,10 @@ if [[ (! -d "${DOTNETSDK_INSTALLDIR}") || (! -e "${DOTNETSDK_INSTALLDIR}/.${DOTN
     echo "${DOTNETSDK_VERSION}" > "${DOTNETSDK_INSTALLDIR}/.${DOTNETSDK_VERSION}"
 fi
 
-echo "Prepend ${DOTNETSDK_INSTALLDIR} to %PATH%"
-export PATH=${DOTNETSDK_INSTALLDIR}:$PATH
+if [[ ("$RUNTIME_ID" != 'linux-ppc64le') && ("$RUNTIME_ID" != 'linux-s390x') ]]; then
+  echo "Prepend ${DOTNETSDK_INSTALLDIR} to %PATH%"
+  export PATH=${DOTNETSDK_INSTALLDIR}:$PATH
+fi
 
 heading "Dotnet SDK Version"
 dotnet --version
